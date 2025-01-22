@@ -32,25 +32,6 @@ jobs:
           docker build -t $DOCKERHUB_USERNAME/sample-go-app:lastest .
           docker push $DOCKERHUB_USERNAME/sample-go-app:lastest
 
-      # Step 4: Update Kustomize Deployment Manifest
-      - name: Update Image in Kustomize
-        run: |
-          if [ "${{ github.ref_name }}" == "dev" ]; then
-            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/dev/kustomization.yaml
-            git config --global user.email "actions@github.com"
-            git config --global user.name "GitHub Actions"
-            git add kustomize/overlays/dev/deployment.yaml
-            git commit -m "Update image to lastest for dev"
-            git push
-          elif [ "${{ github.ref_name }}" == "prod" ]; then
-            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/prod/kustomization.yaml
-            git config --global user.email "actions@github.com"
-            git config --global user.name "GitHub Actions"
-            git add kustomize/overlays/prod/deployment.yaml
-            git commit -m "Update image to lastest for prod"
-            git push
-          fi
-
       # Step 5: Trigger ArgoCD to Sync Changes
       - name: Sync with ArgoCD
         run: |
