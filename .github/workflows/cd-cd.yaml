@@ -29,10 +29,8 @@ jobs:
       # Step 3: Build and Push Docker Image
       - name: Build and Push Docker Image
         run: |
-          docker build -t $DOCKERHUB_USERNAME/sample-go-app:$lastest .
+          docker build -t $DOCKERHUB_USERNAME/sample-go-app:lastest .
           docker push $DOCKERHUB_USERNAME/sample-go-app:lastest
-        env:
-          IMAGE_TAG: ${{ github.sha }}
 
       # Step 4: Update Kustomize Deployment Manifest
       - name: Update Image in Kustomize
