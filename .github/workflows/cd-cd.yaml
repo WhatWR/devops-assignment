@@ -29,21 +29,23 @@ jobs:
       # Step 3: Build and Push Docker Image
       - name: Build and Push Docker Image
         run: |
-          docker build -t $DOCKERHUB_USERNAME/sample-go-app:lastest .
+          docker build -t $DOCKERHUB_USERNAME/sample-go-app:$lastest .
           docker push $DOCKERHUB_USERNAME/sample-go-app:lastest
+        env:
+          IMAGE_TAG: ${{ github.sha }}
 
       # Step 4: Update Kustomize Deployment Manifest
       - name: Update Image in Kustomize
         run: |
           if [ "${{ github.ref_name }}" == "dev" ]; then
-            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/dev/deployment.yaml
+            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/dev/kustomization.yaml
             git config --global user.email "actions@github.com"
             git config --global user.name "GitHub Actions"
             git add kustomize/overlays/dev/deployment.yaml
             git commit -m "Update image to lastest for dev"
             git push
           elif [ "${{ github.ref_name }}" == "prod" ]; then
-            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/prod/deployment.yaml
+            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/prod/kustomization.yaml
             git config --global user.email "actions@github.com"
             git config --global user.name "GitHub Actions"
             git add kustomize/overlays/prod/deployment.yaml
