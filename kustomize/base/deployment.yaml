@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-go-app
+  namespace: sample-namespace
+  labels:
+    app: sample-go-app
+spec:
+  selector:
+    matchLabels:
+      app: sample-go-app
+  template:
+    metadata:
+      labels:
+        app: sample-go-app
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: sample-go-app
+          image: ijustwannahigh/sample-go-app:latest
+          ports:
+            - containerPort: 8080
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - NET_RAW
+            runAsUser: 10000
+            runAsGroup: 10000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: '128Mi'
+            limits:
+              memory: '256Mi'

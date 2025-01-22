@@ -1,0 +1,8 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-go-app
+  namespace: sample-namespace-prod
+spec:
+  replicas: 3
+  automountServiceAccountToken: false

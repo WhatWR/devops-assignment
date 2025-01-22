@@ -1,0 +1,5 @@
+namespace: sample-namespace-dev
+resources:
+  - ../../base
+patchesStrategicMerge:
+  - replicas.yaml

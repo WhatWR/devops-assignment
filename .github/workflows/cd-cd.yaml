@@ -1,0 +1,65 @@
+name: CI/CD Pipeline for Sample Go App
+
+on:
+  push:
+    branches:
+      - dev
+      - prod
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      # Step 3: Build and Push Docker Image
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t $DOCKERHUB_USERNAME/sample-go-app:$lastest .
+          docker push $DOCKERHUB_USERNAME/sample-go-app:lastest
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+
+      # Step 4: Update Kustomize Deployment Manifest
+      - name: Update Image in Kustomize
+        run: |
+          if [ "${{ github.ref_name }}" == "dev" ]; then
+            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/dev/deployment.yaml
+            git config --global user.email "actions@github.com"
+            git config --global user.name "GitHub Actions"
+            git add kustomize/overlays/dev/deployment.yaml
+            git commit -m "Update image to lastest for dev"
+            git push
+          elif [ "${{ github.ref_name }}" == "prod" ]; then
+            sed -i "s|image:.*|image: $DOCKERHUB_USERNAME/sample-go-app:lastest|g" kustomize/overlays/prod/deployment.yaml
+            git config --global user.email "actions@github.com"
+            git config --global user.name "GitHub Actions"
+            git add kustomize/overlays/prod/deployment.yaml
+            git commit -m "Update image to lastest for prod"
+            git push
+          fi
+
+      # Step 5: Trigger ArgoCD to Sync Changes
+      - name: Sync with ArgoCD
+        run: |
+          if [ "${{ github.ref_name }}" == "dev" ]; then
+            kubectl apply -f argocd/dev.yaml
+          elif [ "${{ github.ref_name }}" == "prod" ]; then
+            kubectl apply -f argocd/prod.yaml
+          fi
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
